@@ -1,0 +1,21 @@
+{
+  "name": "SanInPlay Votação iBest",
+  "short_name": "Vote San",
+  "description": "Lembrete diário para votar no SanInPlay no Prêmio iBest.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1005",
+  "theme_color": "#ff4500",
+  "icons": [
+    {
+      "src": "ico192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "ico512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

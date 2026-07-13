@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Votação SanInPlay</title>
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff4500">
+
+    <!-- iOS Support -->
+    <link rel="apple-touch-icon" href="ico192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SanInPlay">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Background Video -->
+    <video autoplay muted loop playsinline id="bg-video">
+        <source src="video.mp4" type="video/mp4">
+    </video>
+
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <img src="ico192.png" alt="SanInPlay Logo" class="logo">
+                <div class="glow"></div>
+            </div>
+            <h1>Prêmio iBest</h1>
+            <!-- CTA Reforçado no subtítulo -->
+            <p class="cta-header">Sua missão: <span class="highlight">Votar diariamente!</span></p>
+        </header>
+
+        <main>
+            <!-- Card de Status Atual -->
+            <div class="status-card" id="statusCard">
+                <div class="icon-wrapper" id="statusIcon">
+                    <!-- Icon will be inserted here by JS -->
+                </div>
+                <h2 id="statusTitle">Verificando...</h2>
+                <p id="statusMessage">Aguarde um momento.</p>
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="time-left" id="timeLeft">--:--:--</div>
+            </div>
+
+            <!-- NOVO: Card de Alerta Crítico sobre a Bandeja/Segundo Plano -->
+            <div class="alert-card warning">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-text">
+                    <strong>ATENÇÃO PROS LEMBRETES:</strong>
+                    Não feche/limpe o app da bandeja do celular! Ele precisa rodar em segundo plano para te avisar
+                    amanhã.
+                </div>
+            </div>
+
+            <button id="voteButton" class="btn-primary" disabled>
+                <span class="btn-text">⚡ CLIQUE PARA VOTAR</span>
+                <span class="btn-glow"></span>
+            </button>
+
+            <!-- NOVO: Redes Sociais -->
+            <div class="social-card">
+                <h3>Compartilhe e Siga o SanInPlay</h3>
+                <div class="social-links">
+                    <a href="https://www.instagram.com/saninplay_/" target="_blank">
+                        <i class="fa-brands fa-instagram"></i>
+                        <span>Instagram</span>
+                    </a>
+                    <a href="https://www.youtube.com/@SanInPlay" target="_blank">
+                        <i class="fa-brands fa-youtube"></i>
+                        <span>YouTube</span>
+                    </a>
+                    <a href="https://x.com/DjSan_" target="_blank">
+                        <i class="fa-brands fa-x-twitter"></i>
+                        <span>X</span>
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <button id="installButton" class="btn-secondary hidden">
+                ⬇️ INSTALAR APP NO CELULAR
+            </button>
+            <button id="enableNotifications" class="btn-secondary hidden">
+                🔔 ATIVAR LEMBRETE DE 24H
+            </button>
+            <p class="disclaimer">O iBest permite 1 voto a cada 24 horas por conta. Use o lembrete para não perder o
+                timing!</p>
+
+            <!-- NOVO: Rodapé de Autoria Open Source (Injetado via JS com Fallback) -->
+            <div id="creditsContainer" class="credits">
+                Desenvolvido por <a href="https://github.com/RafaelGodoyEbert" target="_blank">Rafael Godoy</a>
+                <span>Sob licença GNU GPLv3</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- iOS Install Instructions Modal -->
+    <div id="iosInstallModal" class="ios-modal hidden">
+        <div class="ios-modal-content">
+            <button id="closeIosModal" class="close-btn">&times;</button>
+            <div class="ios-modal-header">
+                <img src="ico192.png" alt="SanInPlay Logo" class="modal-logo">
+                <h3>Instalar no iPhone / iPad</h3>
+            </div>
+            <div class="ios-modal-body">
+                <p>Siga os passos abaixo para instalar o aplicativo no seu iOS:</p>
+                <ol class="ios-steps">
+                    <li>
+                        <span class="step-num">1</span>
+                        <span class="step-text">Toque no botão de <strong>Compartilhar</strong> no Safari <i class="fa-solid fa-arrow-up-from-bracket share-icon"></i>.</span>
+                    </li>
+                    <li>
+                        <span class="step-num">2</span>
+                        <span class="step-text">Role e selecione <strong>Adicionar à Tela de Início</strong> <i class="fa-regular fa-square-plus share-icon"></i>.</span>
+                    </li>
+                    <li>
+                        <span class="step-num">3</span>
+                        <span class="step-text">Toque em <strong>Adicionar</strong> no canto superior direito.</span>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
