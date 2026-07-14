@@ -1,4 +1,4 @@
-const CACHE_NAME = 'saninplay-v7';
+const CACHE_NAME = 'saninplay-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -23,7 +23,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(keys => {
       return Promise.all(
         keys.filter(key => key !== CACHE_NAME)
-            .map(key => caches.delete(key))
+          .map(key => caches.delete(key))
       );
     })
   );
@@ -46,39 +46,39 @@ self.addEventListener('fetch', event => {
 let notificationTimeout = null;
 
 self.addEventListener('message', event => {
-    if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
-        const delay = event.data.delay;
-        
-        if (notificationTimeout) clearTimeout(notificationTimeout);
-        
-        const triggerTime = Date.now() + delay;
-        const notificationOptions = {
-            body: "Tá na hora de votar de novo no iBest! Ajude o San!",
-            icon: "ico192.png",
-            badge: "badge.svg",
-            vibrate: [200, 100, 200],
-            data: {
-                url: "/"
-            }
-        };
-        
-        // Tenta usar a API experimental de TimestampTrigger no Service Worker para persistir no background do OS
-        if (typeof TimestampTrigger !== 'undefined') {
-            try {
-                notificationOptions.showTrigger = new TimestampTrigger(triggerTime);
-                self.registration.showNotification("SanInPlay 🔥", notificationOptions);
-                console.log("Service Worker: Notificação agendada usando TimestampTrigger para:", triggerTime);
-                return;
-            } catch (e) {
-                console.error("Erro ao usar TimestampTrigger, usando fallback setTimeout:", e);
-            }
-        }
-        
-        // Fallback: Temporizador padrão (o navegador pode suspender o SW e interromper o timer)
-        notificationTimeout = setTimeout(() => {
-            self.registration.showNotification("SanInPlay 🔥", notificationOptions);
-        }, delay);
+  if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
+    const delay = event.data.delay;
+
+    if (notificationTimeout) clearTimeout(notificationTimeout);
+
+    const triggerTime = Date.now() + delay;
+    const notificationOptions = {
+      body: "Tá na hora de votar de novo no iBest! Ajude o San!",
+      icon: "ico192.png",
+      badge: "badge.svg",
+      vibrate: [200, 100, 200],
+      data: {
+        url: "/"
+      }
+    };
+
+    // Tenta usar a API experimental de TimestampTrigger no Service Worker para persistir no background do OS
+    if (typeof TimestampTrigger !== 'undefined') {
+      try {
+        notificationOptions.showTrigger = new TimestampTrigger(triggerTime);
+        self.registration.showNotification("SanInPlay 🔥", notificationOptions);
+        console.log("Service Worker: Notificação agendada usando TimestampTrigger para:", triggerTime);
+        return;
+      } catch (e) {
+        console.error("Erro ao usar TimestampTrigger, usando fallback setTimeout:", e);
+      }
     }
+
+    // Fallback: Temporizador padrão (o navegador pode suspender o SW e interromper o timer)
+    notificationTimeout = setTimeout(() => {
+      self.registration.showNotification("SanInPlay 🔥", notificationOptions);
+    }, delay);
+  }
 });
 
 self.addEventListener('notificationclick', event => {

@@ -828,19 +828,22 @@ function generateScreenshot(format) {
                 try {
                     const file = await dataUrlToFile(imgUrl, `saninplay_conquista_${format}.png`);
                     const shareText = getShareText();
+                    
+                    // Copia o texto para a área de transferência como segurança para o usuário poder colar no app
+                    copyTextToClipboard(shareText);
+                    
                     const shareData = {
                         files: [file],
-                        title: 'Minha Conquista SanInPlay',
+                        title: shareText, // Preenche o title também, pois algumas versões/dispositivos usam o title como legenda para imagens
                         text: shareText
                     };
                     
                     if (navigator.canShare && navigator.canShare(shareData)) {
                         await navigator.share(shareData);
-                        showToast("Compartilhado com sucesso!");
+                        showToast("Texto copiado! Pressione para colar no app.");
                     } else {
                         // Fallback: faz download e copia o texto
                         triggerDownload(imgUrl, format);
-                        copyTextToClipboard(shareText);
                         showToast("Imagem baixada e texto copiado! Cole no seu app.");
                     }
                 } catch (e) {
