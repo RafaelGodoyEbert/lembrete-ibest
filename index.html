@@ -137,6 +137,73 @@
         </div>
     </div>
 
+    <!-- Dev Tools Modal -->
+    <div id="devToolsModal" class="dev-modal hidden">
+        <div class="dev-modal-content">
+            <button id="closeDevModal" class="close-btn">&times;</button>
+            <div class="dev-modal-header">
+                <h3>🛠️ Painel DevTools</h3>
+                <p>Configurações & Testes de Notificação</p>
+            </div>
+            <div class="dev-modal-body">
+                <!-- Status Info -->
+                <div class="dev-section">
+                    <h4>Sistema</h4>
+                    <div class="dev-info-grid">
+                        <div>Permissão: <span id="dev-info-permission">--</span></div>
+                        <div>SW Controller: <span id="dev-info-sw">--</span></div>
+                        <div>Triggers API: <span id="dev-info-triggers">--</span></div>
+                        <div>Próximo Alarme: <span id="dev-info-next">Nenhum</span></div>
+                    </div>
+                </div>
+
+                <!-- Test Actions -->
+                <div class="dev-section">
+                    <h4>Ações de Notificação</h4>
+                    <div class="dev-btn-group">
+                        <button id="dev-btn-test-now" class="btn-dev">Testar Agora (Foreground)</button>
+                        <button id="dev-btn-test-10s" class="btn-dev">Testar em 10s (Background SW)</button>
+                        <button id="dev-btn-test-1m" class="btn-dev">Testar em 1min (Background SW)</button>
+                        <button id="dev-btn-test-trigger" class="btn-dev">Testar c/ TimestampTrigger (10s)</button>
+                    </div>
+                </div>
+
+                <!-- Cooldown Overrides -->
+                <div class="dev-section">
+                    <h4>Cooldown de Voto</h4>
+                    <div class="dev-cooldown-options">
+                        <button class="btn-dev-cooldown" data-cooldown="86400000">24 Horas</button>
+                        <button class="btn-dev-cooldown" data-cooldown="10000">10 Segundos</button>
+                        <button class="btn-dev-cooldown" data-cooldown="30000">30 Segundos</button>
+                        <button class="btn-dev-cooldown" data-cooldown="60000">1 Minuto</button>
+                        <button class="btn-dev-cooldown" data-cooldown="300000">5 Minutos</button>
+                    </div>
+                </div>
+
+                <!-- Simulation & Reset Actions -->
+                <div class="dev-section">
+                    <h4>Estado & Dados</h4>
+                    <div class="dev-btn-grid">
+                        <button id="dev-btn-simulate-end" class="btn-dev warning">Simular Fim do Cooldown</button>
+                        <button id="dev-btn-clear-vote" class="btn-dev warning">Zerar Último Voto</button>
+                        <button id="dev-btn-reset-app" class="btn-dev danger">Resetar App Completo</button>
+                    </div>
+                </div>
+
+                <!-- Android Troubleshooting -->
+                <div class="dev-section tips">
+                    <h4>⚠️ Dicas para Android</h4>
+                    <ul>
+                        <li>Permita notificações nas configurações do Android para o Chrome/PWA.</li>
+                        <li>Remova a <strong>Otimização de Bateria</strong> para o app (coloque em "Sem restrições").</li>
+                        <li>Verifique se o app não está sendo encerrado pelo limpador de RAM.</li>
+                        <li>Em alguns aparelhos (Xiaomi/Samsung), ative o "Início Automático" ou "Exibir na tela de bloqueio".</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden"></div>
 

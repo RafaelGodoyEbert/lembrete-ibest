@@ -1,4 +1,4 @@
-const CACHE_NAME = 'saninplay-v4';
+const CACHE_NAME = 'saninplay-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -50,16 +50,32 @@ self.addEventListener('message', event => {
         
         if (notificationTimeout) clearTimeout(notificationTimeout);
         
+        const triggerTime = Date.now() + delay;
+        const notificationOptions = {
+            body: "Tá na hora de votar de novo no iBest! Ajude o San!",
+            icon: "ico192.png",
+            badge: "ico192.png",
+            vibrate: [200, 100, 200],
+            data: {
+                url: "/"
+            }
+        };
+        
+        // Tenta usar a API experimental de TimestampTrigger no Service Worker para persistir no background do OS
+        if (typeof TimestampTrigger !== 'undefined') {
+            try {
+                notificationOptions.showTrigger = new TimestampTrigger(triggerTime);
+                self.registration.showNotification("SanInPlay 🔥", notificationOptions);
+                console.log("Service Worker: Notificação agendada usando TimestampTrigger para:", triggerTime);
+                return;
+            } catch (e) {
+                console.error("Erro ao usar TimestampTrigger, usando fallback setTimeout:", e);
+            }
+        }
+        
+        // Fallback: Temporizador padrão (o navegador pode suspender o SW e interromper o timer)
         notificationTimeout = setTimeout(() => {
-            self.registration.showNotification("SanInPlay 🔥", {
-                body: "Tá na hora de votar de novo no iBest! Ajude o San!",
-                icon: "ico192.png",
-                badge: "ico192.png",
-                vibrate: [200, 100, 200],
-                data: {
-                    url: "/"
-                }
-            });
+            self.registration.showNotification("SanInPlay 🔥", notificationOptions);
         }, delay);
     }
 });
