@@ -6,13 +6,13 @@ const safeStorage = {
         try { return localStorage.getItem(key); } catch (e) { return null; }
     },
     setItem(key, value) {
-        try { localStorage.setItem(key, value); } catch (e) {}
+        try { localStorage.setItem(key, value); } catch (e) { }
     },
     removeItem(key) {
-        try { localStorage.removeItem(key); } catch (e) {}
+        try { localStorage.removeItem(key); } catch (e) { }
     },
     clear() {
-        try { localStorage.clear(); } catch (e) {}
+        try { localStorage.clear(); } catch (e) { }
     }
 };
 
@@ -27,6 +27,17 @@ const state = {
 let deferredPrompt;
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isStandalone = window.navigator.standalone === true;
+
+// Ranks / Patentes de Votos
+const RANKS = [
+    { id: 'none', name: 'Recruta', minVotes: 0, maxVotes: 0, class: 'rank-none', icon: '<i class="fa-solid fa-medal"></i>', desc: 'Vote 1 vez para desbloquear a patente Bronze.' },
+    { id: 'bronze', name: 'Fã Bronze', minVotes: 1, maxVotes: 4, class: 'rank-bronze', icon: '<i class="fa-solid fa-award"></i>', desc: 'Vote mais {diff} vezes para desbloquear a patente Prata!' },
+    { id: 'silver', name: 'Fã Prata', minVotes: 5, maxVotes: 14, class: 'rank-silver', icon: '<i class="fa-solid fa-award"></i>', desc: 'Vote mais {diff} vezes para desbloquear a patente Ouro!' },
+    { id: 'gold', name: 'Fã Ouro', minVotes: 15, maxVotes: 29, class: 'rank-gold', icon: '<i class="fa-solid fa-trophy"></i>', desc: 'Falta pouco! Vote mais {diff} vezes para ser Fã Platina!' },
+    { id: 'platinum', name: 'Fã Platina', minVotes: 30, maxVotes: 49, class: 'rank-platinum', icon: '<i class="fa-solid fa-crown"></i>', desc: 'Incrível! Mais {diff} votos para virar Diamante!' },
+    { id: 'diamond', name: 'Fã Diamante', minVotes: 50, maxVotes: 99, class: 'rank-diamond', icon: '<i class="fa-solid fa-gem"></i>', desc: 'Nível lendário! Mais {diff} votos para ser Fã Lenda!' },
+    { id: 'legend', name: 'Fã Lenda', minVotes: 100, maxVotes: Infinity, class: 'rank-legend', icon: '<i class="fa-solid fa-flame"></i>', desc: 'Você é uma Lenda absoluta do canal! 🔥' }
+];
 
 // Elements
 const el = {
@@ -43,7 +54,41 @@ const el = {
     toast: document.getElementById('toast'),
     iosInstallModal: document.getElementById('iosInstallModal'),
     closeIosModal: document.getElementById('closeIosModal'),
+
+    // Conquistas e Compartilhamento (Modificados para Modal Tela Cheia)
+    btnAchievements: document.getElementById('btnAchievements'),
+    achievementsModal: document.getElementById('achievementsModal'),
+    closeAchievementsModal: document.getElementById('closeAchievementsModal'),
+    fanBadge: document.getElementById('fanBadge'),
+    badgeName: document.getElementById('badgeName'),
+    totalVotes: document.getElementById('totalVotes'),
+    nextRankVotes: document.getElementById('nextRankVotes'),
+    rankProgressBar: document.getElementById('rankProgressBar'),
+    rankProgressText: document.getElementById('rankProgressText'),
     
+    // Screenshot e Modais de Imagem
+    btnGenerateStories: document.getElementById('btnGenerateStories'),
+    btnGenerateFeed: document.getElementById('btnGenerateFeed'),
+    screenshotResultModal: document.getElementById('screenshotResultModal'),
+    closeScreenshotModal: document.getElementById('closeScreenshotModal'),
+    screenshotImageContainer: document.getElementById('screenshotImageContainer'),
+    btnShareImage: document.getElementById('btnShareImage'),
+
+    // Elementos dos Templates Ocultos
+    tplStoriesRank: document.getElementById('tplStoriesRank'),
+    tplStoriesBadge: document.getElementById('tplStoriesBadge'),
+    tplStoriesVotes: document.getElementById('tplStoriesVotes'),
+    tplStoriesCode: document.getElementById('tplStoriesCode'),
+    tplFeedRank: document.getElementById('tplFeedRank'),
+    tplFeedBadge: document.getElementById('tplFeedBadge'),
+    tplFeedVotes: document.getElementById('tplFeedVotes'),
+    tplFeedCode: document.getElementById('tplFeedCode'),
+
+    // Redes e Textos
+    btnTwitterShare: document.getElementById('btnTwitterShare'),
+    btnWhatsappShare: document.getElementById('btnWhatsappShare'),
+    btnCopyClipboard: document.getElementById('btnCopyClipboard'),
+
     // Dev Tools elements
     logoImg: document.querySelector('.logo-container img'),
     devModal: document.getElementById('devToolsModal'),
@@ -55,7 +100,15 @@ const el = {
     devBtnSimulateEnd: document.getElementById('dev-btn-simulate-end'),
     devBtnClearVote: document.getElementById('dev-btn-clear-vote'),
     devBtnResetApp: document.getElementById('dev-btn-reset-app'),
-    devCooldownBtns: document.querySelectorAll('.btn-dev-cooldown')
+    devCooldownBtns: document.querySelectorAll('.btn-dev-cooldown'),
+
+    // Dev Tools Vote elements
+    devInfoVotes: document.getElementById('dev-info-votes'),
+    devBtnVoteAdd1: document.getElementById('dev-btn-vote-add1'),
+    devBtnVoteAdd5: document.getElementById('dev-btn-vote-add5'),
+    devBtnVoteAdd25: document.getElementById('dev-btn-vote-add25'),
+    devBtnVoteAdd100: document.getElementById('dev-btn-vote-add100'),
+    devBtnVoteSet0: document.getElementById('dev-btn-vote-set0')
 };
 
 // Register Service Worker and handle updates
@@ -226,25 +279,80 @@ function init() {
             const newCooldown = parseInt(btn.getAttribute('data-cooldown'));
             VOTE_COOLDOWN_MS = newCooldown;
             safeStorage.setItem('saninplay_cooldown_override', newCooldown.toString());
-            
+
             // Define o último voto para "agora" para forçar a contagem do novo cooldown a começar do início
             const now = Date.now().toString();
             safeStorage.setItem('saninplay_last_vote', now);
             state.lastVoteTime = now;
-            
+
             showToast(`Cooldown ajustado para ${newCooldown >= 60000 ? (newCooldown / 60000) + ' min' : (newCooldown / 1000) + 's'}!`);
             updateState();
             updateDevToolsInfo();
         });
     });
 
+    // Conquistas e Modal Event Listeners
+    if (el.btnAchievements) {
+        el.btnAchievements.addEventListener('click', openAchievementsModal);
+    }
+    if (el.closeAchievementsModal) {
+        el.closeAchievementsModal.addEventListener('click', closeAchievementsModal);
+    }
+    if (el.achievementsModal) {
+        el.achievementsModal.addEventListener('click', (e) => {
+            if (e.target === el.achievementsModal) closeAchievementsModal();
+        });
+    }
+    if (el.btnGenerateStories) {
+        el.btnGenerateStories.addEventListener('click', () => generateScreenshot('stories'));
+    }
+    if (el.btnGenerateFeed) {
+        el.btnGenerateFeed.addEventListener('click', () => generateScreenshot('feed'));
+    }
+    if (el.closeScreenshotModal) {
+        el.closeScreenshotModal.addEventListener('click', closeScreenshotModal);
+    }
+    if (el.screenshotResultModal) {
+        el.screenshotResultModal.addEventListener('click', (e) => {
+            if (e.target === el.screenshotResultModal) closeScreenshotModal();
+        });
+    }
+    if (el.btnTwitterShare) {
+        el.btnTwitterShare.addEventListener('click', shareOnTwitter);
+    }
+    if (el.btnWhatsappShare) {
+        el.btnWhatsappShare.addEventListener('click', shareOnWhatsapp);
+    }
+    if (el.btnCopyClipboard) {
+        el.btnCopyClipboard.addEventListener('click', copyShareText);
+    }
+
+    // DevTools Vote Control Listeners
+    if (el.devBtnVoteAdd1) {
+        el.devBtnVoteAdd1.addEventListener('click', () => adjustVotes(1));
+    }
+    if (el.devBtnVoteAdd5) {
+        el.devBtnVoteAdd5.addEventListener('click', () => adjustVotes(5));
+    }
+    if (el.devBtnVoteAdd25) {
+        el.devBtnVoteAdd25.addEventListener('click', () => adjustVotes(25));
+    }
+    if (el.devBtnVoteAdd100) {
+        el.devBtnVoteAdd100.addEventListener('click', () => adjustVotes(100));
+    }
+    if (el.devBtnVoteSet0) {
+        el.devBtnVoteSet0.addEventListener('click', () => adjustVotes(0, true));
+    }
+
     updateState();
+    updateStats();
     injectCredits();
 
     // Add visibility change listener to handle returning to app
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === 'visible') {
             updateState();
+            updateStats();
             if (el.devModal && !el.devModal.classList.contains('hidden')) {
                 updateDevToolsInfo();
             }
@@ -381,9 +489,15 @@ function handleVote() {
 
     // Se não tinha voto anterior ou já passou o tempo, reseta o timer
     if (!state.lastVoteTime || (now - parseInt(state.lastVoteTime)) >= VOTE_COOLDOWN_MS) {
+        // Incrementa o contador de votos (Muita mão criar API para vocês não burlarem kkkkkk)
+        let count = parseInt(safeStorage.getItem('saninplay_vote_count')) || 0;
+        count++;
+        safeStorage.setItem('saninplay_vote_count', count.toString());
+
         safeStorage.setItem('saninplay_last_vote', now.toString());
         state.lastVoteTime = now.toString();
         updateState();
+        updateStats();
         scheduleServiceWorkerNotification();
     }
 }
@@ -472,14 +586,14 @@ function updateDevToolsInfo() {
         permissionSpan.textContent = perm;
         permissionSpan.style.color = perm === 'granted' ? '#00f0ff' : '#ff007f';
     }
-    
+
     const swSpan = document.getElementById('dev-info-sw');
     if (swSpan) {
         const hasController = !!navigator.serviceWorker.controller;
         swSpan.textContent = hasController ? 'Ativo' : 'Inativo';
         swSpan.style.color = hasController ? '#00f0ff' : '#ff007f';
     }
-    
+
     const triggersSpan = document.getElementById('dev-info-triggers');
     if (triggersSpan) {
         const hasNotification = typeof Notification !== 'undefined';
@@ -487,7 +601,14 @@ function updateDevToolsInfo() {
         triggersSpan.textContent = supported ? 'Suportado' : 'Não suportado';
         triggersSpan.style.color = supported ? '#00f0ff' : '#ff007f';
     }
-    
+
+    const votesSpan = el.devInfoVotes;
+    if (votesSpan) {
+        const votes = parseInt(safeStorage.getItem('saninplay_vote_count')) || 0;
+        votesSpan.textContent = votes;
+        votesSpan.style.color = '#00f0ff';
+    }
+
     el.devCooldownBtns.forEach(btn => {
         if (parseInt(btn.getAttribute('data-cooldown')) === VOTE_COOLDOWN_MS) {
             btn.classList.add('active');
@@ -495,7 +616,7 @@ function updateDevToolsInfo() {
             btn.classList.remove('active');
         }
     });
-    
+
     const nextSpan = document.getElementById('dev-info-next');
     if (nextSpan) {
         if (state.lastVoteTime) {
@@ -524,11 +645,11 @@ async function testTimestampTrigger() {
         showToast("Ative as notificações primeiro!");
         return;
     }
-    
+
     try {
         const reg = await navigator.serviceWorker.ready;
         const triggerTime = Date.now() + 10000;
-        
+
         let showTrigger;
         if (typeof TimestampTrigger !== 'undefined') {
             showTrigger = new TimestampTrigger(triggerTime);
@@ -540,7 +661,7 @@ async function testTimestampTrigger() {
                 timestamp: triggerTime
             };
         }
-        
+
         await reg.showNotification("SanInPlay Dev ⏰", {
             body: "Teste de Notificação Programada com TimestampTrigger!",
             icon: "ico192.png",
@@ -548,7 +669,7 @@ async function testTimestampTrigger() {
             vibrate: [200, 100, 200],
             showTrigger: showTrigger
         });
-        
+
         showToast("Notificação programada via Trigger para daqui a 10s!");
     } catch (err) {
         console.error("Erro ao programar trigger:", err);
@@ -564,6 +685,290 @@ function injectCredits() {
             <span>Sob licença GNU GPLv3</span>
         `;
     }
+}
+
+// ==========================================================================
+// FUNÇÕES DO SISTEMA DE CONQUISTAS & COMPARTILHAMENTO (NOVO)
+// ==========================================================================
+
+function openAchievementsModal() {
+    if (el.achievementsModal) {
+        updateStats();
+        el.achievementsModal.classList.remove('hidden');
+    }
+}
+
+function closeAchievementsModal() {
+    if (el.achievementsModal) {
+        el.achievementsModal.classList.add('hidden');
+    }
+}
+
+function closeScreenshotModal() {
+    if (el.screenshotResultModal) {
+        el.screenshotResultModal.classList.add('hidden');
+    }
+}
+
+function updateStats() {
+    const votes = parseInt(safeStorage.getItem('saninplay_vote_count')) || 0;
+    
+    // Determina a patente atual e próxima patente
+    let currentRank = RANKS[0];
+    let nextRank = RANKS[1];
+    
+    for (let i = 0; i < RANKS.length; i++) {
+        if (votes >= RANKS[i].minVotes) {
+            currentRank = RANKS[i];
+            nextRank = RANKS[i + 1] || null;
+        }
+    }
+    
+    // Atualiza contadores numéricos do modal
+    if (el.totalVotes) el.totalVotes.textContent = votes;
+    if (el.nextRankVotes) el.nextRankVotes.textContent = nextRank ? nextRank.minVotes : "MAX";
+    
+    // Calcula progresso
+    let progressPercent = 0;
+    if (!nextRank) {
+        progressPercent = 100;
+    } else {
+        const rangeStart = currentRank.minVotes;
+        const rangeEnd = nextRank.minVotes;
+        const range = rangeEnd - rangeStart;
+        progressPercent = Math.min(100, Math.max(0, ((votes - rangeStart) / range) * 100));
+    }
+    if (el.rankProgressBar) el.rankProgressBar.style.width = `${progressPercent}%`;
+    
+    // Atualiza texto explicativo do progresso
+    if (el.rankProgressText) {
+        if (nextRank) {
+            const diff = nextRank.minVotes - votes;
+            el.rankProgressText.innerHTML = currentRank.desc.replace('{diff}', diff);
+        } else {
+            el.rankProgressText.textContent = currentRank.desc;
+        }
+    }
+    
+    // Atualiza o visual do Badge/Medalha no Painel de Conquistas
+    if (el.fanBadge) {
+        RANKS.forEach(r => el.fanBadge.classList.remove(r.class));
+        el.fanBadge.classList.add(currentRank.class);
+        el.fanBadge.innerHTML = currentRank.icon;
+    }
+    
+    // Atualiza o nome da patente (com cor correspondente)
+    if (el.badgeName) {
+        el.badgeName.textContent = currentRank.name;
+        RANKS.forEach(r => el.badgeName.classList.remove(`${r.class}-text`));
+        el.badgeName.classList.add(`${currentRank.class}-text`);
+    }
+
+    // ==========================================
+    // Atualiza também os Templates Off-Screen
+    // ==========================================
+    const verification = generateVerificationCode(votes);
+
+    // Template Stories
+    if (el.tplStoriesRank) {
+        el.tplStoriesRank.textContent = currentRank.name;
+        RANKS.forEach(r => el.tplStoriesRank.classList.remove(`${r.class}-text`));
+        el.tplStoriesRank.classList.add(`${currentRank.class}-text`);
+    }
+    if (el.tplStoriesBadge) {
+        RANKS.forEach(r => el.tplStoriesBadge.classList.remove(r.class));
+        el.tplStoriesBadge.classList.add(currentRank.class);
+        el.tplStoriesBadge.innerHTML = currentRank.icon;
+    }
+    if (el.tplStoriesVotes) el.tplStoriesVotes.textContent = votes;
+    if (el.tplStoriesCode) el.tplStoriesCode.textContent = verification;
+
+    // Template Feed
+    if (el.tplFeedRank) {
+        el.tplFeedRank.textContent = currentRank.name;
+        RANKS.forEach(r => el.tplFeedRank.classList.remove(`${r.class}-text`));
+        el.tplFeedRank.classList.add(`${currentRank.class}-text`);
+    }
+    if (el.tplFeedBadge) {
+        RANKS.forEach(r => el.tplFeedBadge.classList.remove(r.class));
+        el.tplFeedBadge.classList.add(currentRank.class);
+        el.tplFeedBadge.innerHTML = currentRank.icon;
+    }
+    if (el.tplFeedVotes) el.tplFeedVotes.textContent = votes;
+    if (el.tplFeedCode) el.tplFeedCode.textContent = verification;
+}
+
+// Gera o screenshot a partir de um dos templates off-screen
+function generateScreenshot(format) {
+    showToast("Gerando card... Aguarde.");
+    
+    const element = format === 'stories' ? document.getElementById('tplStories') : document.getElementById('tplFeed');
+    if (!element) {
+        showToast("Erro ao encontrar o template.");
+        return;
+    }
+
+    // Utiliza html2canvas para fotografar o template
+    html2canvas(element, {
+        scale: 2, // Gera em dobro de resolução para telas de alta densidade (Retina/OLED)
+        useCORS: true,
+        backgroundColor: null,
+        logging: false
+    }).then(canvas => {
+        const imgUrl = canvas.toDataURL('image/png');
+        
+        // Coloca a imagem gerada no modal
+        if (el.screenshotImageContainer) {
+            el.screenshotImageContainer.innerHTML = `<img src="${imgUrl}" alt="Card Conquista SanInPlay">`;
+        }
+        
+        // Define ação do botão de compartilhamento
+        if (el.btnShareImage) {
+            el.btnShareImage.onclick = async () => {
+                try {
+                    const file = await dataUrlToFile(imgUrl, `saninplay_conquista_${format}.png`);
+                    const shareText = getShareText();
+                    const shareData = {
+                        files: [file],
+                        title: 'Minha Conquista SanInPlay',
+                        text: shareText
+                    };
+                    
+                    if (navigator.canShare && navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                        showToast("Compartilhado com sucesso!");
+                    } else {
+                        // Fallback: faz download e copia o texto
+                        triggerDownload(imgUrl, format);
+                        copyTextToClipboard(shareText);
+                        showToast("Imagem baixada e texto copiado! Cole no seu app.");
+                    }
+                } catch (e) {
+                    console.error("Erro ao compartilhar:", e);
+                    // Fallback
+                    triggerDownload(imgUrl, format);
+                    copyTextToClipboard(getShareText());
+                    showToast("Imagem baixada e texto copiado!");
+                }
+            };
+        }
+        
+        // Exibe o modal do resultado
+        if (el.screenshotResultModal) {
+            el.screenshotResultModal.classList.remove('hidden');
+        }
+    }).catch(err => {
+        console.error("Erro ao renderizar com html2canvas:", err);
+        showToast("Erro ao processar imagem.");
+    });
+}
+
+// Converte dataURL para File para Web Share
+async function dataUrlToFile(dataUrl, fileName) {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], fileName, { type: 'image/png' });
+}
+
+// Dispara download da imagem como fallback
+function triggerDownload(imgUrl, format) {
+    const link = document.createElement('a');
+    link.download = `saninplay_conquista_${format}.png`;
+    link.href = imgUrl;
+    link.click();
+}
+
+// Copia o texto para clipboard como fallback
+function copyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(err => console.error(err));
+    } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        document.body.appendChild(textarea);
+        textarea.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        document.body.removeChild(textarea);
+    }
+}
+
+// Gera código pseudo-criptografado para autenticação de fã
+function generateVerificationCode(votes) {
+    const salt = 7197;
+    let val = (votes * 17 + salt) % 10000;
+    let valHex = val.toString(16).toUpperCase().padStart(4, '0');
+    return `SIP-${votes.toString().padStart(4, '0')}-${valHex}`;
+}
+
+// Retorna o texto formatado para ser compartilhado
+function getShareText() {
+    const votes = parseInt(safeStorage.getItem('saninplay_vote_count')) || 0;
+    let currentRank = RANKS[0];
+    for (let i = 0; i < RANKS.length; i++) {
+        if (votes >= RANKS[i].minVotes) {
+            currentRank = RANKS[i];
+        }
+    }
+    
+    const verification = generateVerificationCode(votes);
+    const origin = window.location.origin || "https://premioibest.vote/719796142";
+    
+    return `Eu sou patente ${currentRank.name.toUpperCase()} no PWA do SanInPlay! 🏆 Já registrei ${votes} votos para o San no Prêmio iBest.\n\nCódigo de Verificação: ${verification}\nAjude você também a votar todos os dias no link: ${origin}`;
+}
+
+// Compartilha no X (Twitter)
+function shareOnTwitter() {
+    const text = getShareText();
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+}
+
+// Compartilha no WhatsApp
+function shareOnWhatsapp() {
+    const text = getShareText();
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+}
+
+// Copia o texto de compartilhamento para a área de transferência
+function copyShareText() {
+    const text = getShareText();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("Mensagem de fã copiada!");
+        }).catch(err => {
+            console.error("Falha ao copiar texto:", err);
+            showToast("Erro ao copiar. Use o print!");
+        });
+    } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand("copy");
+            showToast("Mensagem de fã copiada!");
+        } catch (e) {
+            showToast("Erro ao copiar. Use o print!");
+        }
+        document.body.removeChild(textarea);
+    }
+}
+
+// Ajusta a contagem de votos via DevTools
+function adjustVotes(amount, setExact = false) {
+    let votes = parseInt(safeStorage.getItem('saninplay_vote_count')) || 0;
+    if (setExact) {
+        votes = amount;
+    } else {
+        votes += amount;
+    }
+    safeStorage.setItem('saninplay_vote_count', votes.toString());
+    updateStats();
+    updateDevToolsInfo();
+    showToast(`Votos ajustados para: ${votes}!`);
 }
 
 // Start

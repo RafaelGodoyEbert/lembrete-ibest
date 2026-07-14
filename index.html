@@ -8,6 +8,7 @@
 
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="ico192.png">
     <meta name="theme-color" content="#ff4500">
 
     <!-- iOS Support -->
@@ -69,6 +70,11 @@
             <button id="voteButton" class="btn-primary" disabled>
                 <span class="btn-text">⚡ CLIQUE PARA VOTAR</span>
                 <span class="btn-glow"></span>
+            </button>
+
+            <!-- Botão de Conquistas (Abre modal tela cheia) -->
+            <button id="btnAchievements" class="btn-achievements-main">
+                🏆 MINHAS CONQUISTAS & CARD
             </button>
 
             <!-- NOVO: Redes Sociais -->
@@ -137,6 +143,201 @@
         </div>
     </div>
 
+    <!-- Modal de Conquistas (Tela Cheia) -->
+    <div id="achievementsModal" class="achievements-modal hidden">
+        <div class="achievements-modal-content">
+            <button id="closeAchievementsModal" class="close-btn">&times;</button>
+            <div class="achievements-modal-header">
+                <h3>🏆 Minhas Conquistas</h3>
+                <p>Acompanhe suas patentes e gere comprovantes</p>
+            </div>
+            
+            <div class="achievements-modal-body">
+                <!-- Painel de Conquistas -->
+                <div class="stats-panel">
+                    <div class="badge-container">
+                        <div id="fanBadge" class="fan-badge rank-none">
+                            <i class="fa-solid fa-medal"></i>
+                        </div>
+                        <div class="badge-info">
+                            <span class="badge-label">Patente Atual</span>
+                            <span id="badgeName" class="badge-name">Recruta</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-numbers">
+                        <div class="stat-box">
+                            <span class="stat-val" id="totalVotes">0</span>
+                            <span class="stat-desc">Votos Feitos</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-val" id="nextRankVotes">1</span>
+                            <span class="stat-desc">Próximo Nível</span>
+                        </div>
+                    </div>
+
+                    <!-- Barra de progresso para a próxima patente -->
+                    <div class="rank-progress-container">
+                        <div class="rank-progress-bar" id="rankProgressBar"></div>
+                    </div>
+                    <p class="rank-progress-text" id="rankProgressText">Carregando...</p>
+                </div>
+
+                <div class="divider-line"></div>
+
+                <!-- Seção de Geração de Comprovantes / Imagens -->
+                <div class="share-section">
+                    <h4>📸 Compartilhar no Instagram</h4>
+                    <p class="share-desc">Gere um card em alta resolução com a sua conquista!</p>
+                    
+                    <div class="screenshot-options">
+                        <button id="btnGenerateStories" class="btn-share-option">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                            <span>Stories (9:16)</span>
+                        </button>
+                        <button id="btnGenerateFeed" class="btn-share-option">
+                            <i class="fa-solid fa-square"></i>
+                            <span>Feed (4:3)</span>
+                        </button>
+                    </div>
+
+                    <div class="divider-line-sub"></div>
+
+                    <!-- Seção de Texto e Redes Secundárias -->
+                    <h4>🔗 Links Rápidos</h4>
+                    <div class="simple-share-links">
+                        <button id="btnTwitterShare" class="btn-social-mini btn-twitter">
+                            <i class="fa-brands fa-x-twitter"></i> Twitter / X
+                        </button>
+                        <button id="btnWhatsappShare" class="btn-social-mini btn-whatsapp">
+                            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                        </button>
+                        <button id="btnCopyClipboard" class="btn-social-mini btn-copy">
+                            <i class="fa-solid fa-copy"></i> Copiar Texto
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal do Resultado do Screenshot -->
+    <div id="screenshotResultModal" class="screenshot-modal hidden">
+        <div class="screenshot-modal-content">
+            <button id="closeScreenshotModal" class="close-btn">&times;</button>
+            <div class="screenshot-modal-header">
+                <h3>📸 Imagem Pronta!</h3>
+                <p>Pressione sobre a imagem para salvar no celular, ou clique no botão abaixo.</p>
+            </div>
+            <div class="screenshot-modal-body">
+                <div id="screenshotImageContainer" class="screenshot-img-container">
+                    <!-- A imagem gerada será inserida aqui via JS -->
+                </div>
+                <button id="btnShareImage" class="btn-primary-share">
+                    <i class="fa-solid fa-share-nodes"></i> COMPARTILHAR CARD
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates de Imagem Ocultos para html2canvas -->
+    <div id="screenshotTemplates" class="hidden-templates">
+        <!-- Template Stories 9:16 (1080x1920) -->
+        <div id="tplStories" class="template-container template-stories">
+            <div class="tpl-bg-glow"></div>
+            
+            <div class="tpl-header">
+                <img src="ico192.png" alt="Logo" class="tpl-logo">
+                <div class="tpl-brand-group">
+                    <span class="tpl-brand-pwa">SANINPLAY PWA</span>
+                    <span class="tpl-brand-title">PRÊMIO IBEST 2026</span>
+                </div>
+            </div>
+            
+            <div class="tpl-divider-custom"></div>
+            
+            <div class="tpl-body">
+                <span class="tpl-ranking-label">PATENTE DO CANAL</span>
+                <span id="tplStoriesRank" class="tpl-ranking-title rank-none-text">RECRUTA</span>
+                
+                <div id="tplStoriesBadge" class="tpl-badge rank-none">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                
+                <div class="tpl-votes-card">
+                    <span id="tplStoriesVotes" class="tpl-votes-count">0</span>
+                    <span class="tpl-votes-label">VOTOS CONFIRMADOS</span>
+                </div>
+                
+                <div class="tpl-cta-box">
+                    <span class="tpl-cta-sub">MISSÃO DIÁRIA CUMPRIDA</span>
+                    <span class="tpl-cta-main">VOTE TODOS OS DIAS NO SAN!</span>
+                </div>
+            </div>
+            
+            <div class="tpl-divider-custom"></div>
+            
+            <div class="tpl-footer">
+                <div class="tpl-verification">
+                    <span class="tpl-label">CÓDIGO DE AUTENTICIDADE</span>
+                    <strong id="tplStoriesCode" class="tpl-val">SIP-0000-XXXX</strong>
+                </div>
+                <div class="tpl-social">
+                    <span class="tpl-label">SIGA NO INSTAGRAM</span>
+                    <strong class="tpl-val">@saninplay_</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template Feed 4:3 (1080x810) -->
+        <div id="tplFeed" class="template-container template-feed">
+            <div class="tpl-bg-glow"></div>
+            
+            <div class="tpl-left">
+                <img src="ico192.png" alt="Logo" class="tpl-logo-square">
+                <div class="tpl-brand-group-square">
+                    <span class="tpl-brand-pwa">SANINPLAY PWA</span>
+                    <span class="tpl-brand-title">PRÊMIO IBEST 2026</span>
+                </div>
+                
+                <div class="tpl-cta-box-square">
+                    <span class="tpl-cta-sub">MISSÃO DIÁRIA</span>
+                    <span class="tpl-cta-main">VOTE DIARIAMENTE!</span>
+                </div>
+            </div>
+            
+            <div class="tpl-divider-vertical"></div>
+            
+            <div class="tpl-right">
+                <span class="tpl-ranking-label">PATENTE DO CANAL</span>
+                <span id="tplFeedRank" class="tpl-ranking-title rank-none-text">RECRUTA</span>
+                
+                <div id="tplFeedBadge" class="tpl-badge rank-none">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                
+                <div class="tpl-votes-card">
+                    <span id="tplFeedVotes" class="tpl-votes-count">0</span>
+                    <span class="tpl-votes-label">VOTOS CONFIRMADOS</span>
+                </div>
+                
+                <div class="tpl-footer-square">
+                    <div class="tpl-verification">
+                        <span class="tpl-label">CÓDIGO DE VERIFICAÇÃO</span>
+                        <strong id="tplFeedCode" class="tpl-val">SIP-0000-XXXX</strong>
+                    </div>
+                    <div class="tpl-social">
+                        <span class="tpl-label">INSTAGRAM</span>
+                        <strong class="tpl-val">@saninplay_</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Dev Tools Modal -->
     <div id="devToolsModal" class="dev-modal hidden">
         <div class="dev-modal-content">
@@ -154,6 +355,7 @@
                         <div>SW Controller: <span id="dev-info-sw">--</span></div>
                         <div>Triggers API: <span id="dev-info-triggers">--</span></div>
                         <div>Próximo Alarme: <span id="dev-info-next">Nenhum</span></div>
+                        <div>Votos Computados: <span id="dev-info-votes">0</span></div>
                     </div>
                 </div>
 
@@ -177,6 +379,18 @@
                         <button class="btn-dev-cooldown" data-cooldown="30000">30 Segundos</button>
                         <button class="btn-dev-cooldown" data-cooldown="60000">1 Minuto</button>
                         <button class="btn-dev-cooldown" data-cooldown="300000">5 Minutos</button>
+                    </div>
+                </div>
+
+                <!-- Vote Counter Controls (DevOnly) -->
+                <div class="dev-section">
+                    <h4>Controle de Votos</h4>
+                    <div class="dev-cooldown-options">
+                        <button class="btn-dev-vote" id="dev-btn-vote-add1">+1 Voto</button>
+                        <button class="btn-dev-vote" id="dev-btn-vote-add5">+5 Votos</button>
+                        <button class="btn-dev-vote" id="dev-btn-vote-add25">+25 Votos</button>
+                        <button class="btn-dev-vote" id="dev-btn-vote-add100">+100 Votos</button>
+                        <button class="btn-dev-vote" id="dev-btn-vote-set0" style="grid-column: span 2;">Zerar Votos</button>
                     </div>
                 </div>
 
@@ -207,6 +421,7 @@
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="app.js"></script>
 </body>
 
