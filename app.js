@@ -226,6 +226,12 @@ function init() {
             const newCooldown = parseInt(btn.getAttribute('data-cooldown'));
             VOTE_COOLDOWN_MS = newCooldown;
             safeStorage.setItem('saninplay_cooldown_override', newCooldown.toString());
+            
+            // Define o último voto para "agora" para forçar a contagem do novo cooldown a começar do início
+            const now = Date.now().toString();
+            safeStorage.setItem('saninplay_last_vote', now);
+            state.lastVoteTime = now;
+            
             showToast(`Cooldown ajustado para ${newCooldown >= 60000 ? (newCooldown / 60000) + ' min' : (newCooldown / 1000) + 's'}!`);
             updateState();
             updateDevToolsInfo();
@@ -417,7 +423,7 @@ function showLocalNotification() {
             registration.showNotification("SanInPlay 🔥", {
                 body: "Tá na hora de votar de novo no iBest! Ajude o San!",
                 icon: "ico192.png",
-                badge: "ico192.png",
+                badge: "badge.svg",
                 vibrate: [200, 100, 200]
             });
         });

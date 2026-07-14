@@ -1,4 +1,4 @@
-const CACHE_NAME = 'saninplay-v5';
+const CACHE_NAME = 'saninplay-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,8 @@ const ASSETS = [
   './app.js',
   './manifest.json',
   './ico192.png',
-  './ico512.png'
+  './ico512.png',
+  './badge.svg'
 ];
 
 self.addEventListener('install', event => {
@@ -54,7 +55,7 @@ self.addEventListener('message', event => {
         const notificationOptions = {
             body: "Tá na hora de votar de novo no iBest! Ajude o San!",
             icon: "ico192.png",
-            badge: "ico192.png",
+            badge: "badge.svg",
             vibrate: [200, 100, 200],
             data: {
                 url: "/"
