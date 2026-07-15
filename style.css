@@ -1730,3 +1730,26 @@ footer {
 .tpl-footer-square .tpl-val {
     font-size: 20px;
 }
+
+/* Marca d'água de modo Dev nos templates */
+.tpl-dev-watermark {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 85px;
+    font-weight: 900;
+    color: rgba(255, 0, 85, 0.15);
+    border: 15px double rgba(255, 0, 85, 0.15);
+    padding: 20px 40px;
+    text-transform: uppercase;
+    pointer-events: none;
+    letter-spacing: 10px;
+    z-index: 999;
+    white-space: nowrap;
+}
+
+.tpl-dev-watermark.active {
+    display: block;
+}

@@ -1,15 +1,98 @@
+(() => {
 const VOTE_URL = "https://premioibest.vote/719796142";
 
+const _secret = "s4n1npl4y_s3cr3t_2026";
+function _hashVote(value) {
+    let hash = 0;
+    const str = value + _secret;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return hash.toString(16);
+}
+
 // Wrapper seguro para o localStorage (evita crashes se o navegador bloquear cookies/storage local)
+// Agora inclui proteção contra adulteração manual no console e matemática lógica temporal para os votos.
 const safeStorage = {
     getItem(key) {
-        try { return localStorage.getItem(key); } catch (e) { return null; }
+        try { 
+            const val = localStorage.getItem(key);
+            if (key === 'saninplay_vote_count' && val !== null) {
+                const parsedVotes = parseInt(val) || 0;
+                if (parsedVotes > 0) {
+                    const hash = localStorage.getItem('saninplay_vote_hash');
+                    if (hash !== _hashVote(val)) {
+                        console.warn("Tampering detected (hash)! Resetting vote count.");
+                        localStorage.removeItem('saninplay_vote_count');
+                        localStorage.removeItem('saninplay_vote_hash');
+                        localStorage.removeItem('saninplay_first_vote');
+                        localStorage.removeItem('saninplay_first_vote_hash');
+                        return null;
+                    }
+                    // Validação matemática do tempo decorrido desde o primeiro voto
+                    const firstVote = localStorage.getItem('saninplay_first_vote');
+                    if (!firstVote) {
+                        console.warn("Tampering detected (no first vote date)! Resetting vote count.");
+                        localStorage.removeItem('saninplay_vote_count');
+                        localStorage.removeItem('saninplay_vote_hash');
+                        localStorage.removeItem('saninplay_first_vote');
+                        localStorage.removeItem('saninplay_first_vote_hash');
+                        return null;
+                    }
+                    const firstVoteHash = localStorage.getItem('saninplay_first_vote_hash');
+                    if (firstVoteHash !== _hashVote(firstVote)) {
+                        console.warn("Tampering detected (first vote date hash)! Resetting vote count.");
+                        localStorage.removeItem('saninplay_vote_count');
+                        localStorage.removeItem('saninplay_vote_hash');
+                        localStorage.removeItem('saninplay_first_vote');
+                        localStorage.removeItem('saninplay_first_vote_hash');
+                        return null;
+                    }
+                    const now = Date.now();
+                    const diffMs = now - parseInt(firstVote);
+                    // Adiciona buffer de 1 hora para drifts de relógio do OS
+                    const maxPossible = Math.floor((diffMs + 3600000) / VOTE_COOLDOWN_MS) + 1;
+                    if (parsedVotes > maxPossible) {
+                        console.warn("Logical math tampering detected! Votes exceed time limit.");
+                        localStorage.removeItem('saninplay_vote_count');
+                        localStorage.removeItem('saninplay_vote_hash');
+                        localStorage.removeItem('saninplay_first_vote');
+                        localStorage.removeItem('saninplay_first_vote_hash');
+                        return null;
+                    }
+                }
+            }
+            if (key === 'saninplay_first_vote' && val !== null) {
+                const hash = localStorage.getItem('saninplay_first_vote_hash');
+                if (hash !== _hashVote(val)) {
+                    console.warn("Tampering detected (first vote hash)! Resetting first vote.");
+                    localStorage.removeItem('saninplay_first_vote');
+                    localStorage.removeItem('saninplay_first_vote_hash');
+                    return null;
+                }
+            }
+            return val;
+        } catch (e) { return null; }
     },
     setItem(key, value) {
-        try { localStorage.setItem(key, value); } catch (e) { }
+        try { 
+            localStorage.setItem(key, value); 
+            if (key === 'saninplay_vote_count') {
+                localStorage.setItem('saninplay_vote_hash', _hashVote(String(value)));
+            }
+            if (key === 'saninplay_first_vote') {
+                localStorage.setItem('saninplay_first_vote_hash', _hashVote(String(value)));
+            }
+        } catch (e) { }
     },
     removeItem(key) {
-        try { localStorage.removeItem(key); } catch (e) { }
+        try { 
+            localStorage.removeItem(key); 
+            if (key === 'saninplay_vote_count') localStorage.removeItem('saninplay_vote_hash');
+            if (key === 'saninplay_first_vote') localStorage.removeItem('saninplay_first_vote_hash');
+        } catch (e) { }
     },
     clear() {
         try { localStorage.clear(); } catch (e) { }
@@ -79,10 +162,12 @@ const el = {
     tplStoriesBadge: document.getElementById('tplStoriesBadge'),
     tplStoriesVotes: document.getElementById('tplStoriesVotes'),
     tplStoriesCode: document.getElementById('tplStoriesCode'),
+    tplStoriesDev: document.getElementById('tplStoriesDev'),
     tplFeedRank: document.getElementById('tplFeedRank'),
     tplFeedBadge: document.getElementById('tplFeedBadge'),
     tplFeedVotes: document.getElementById('tplFeedVotes'),
     tplFeedCode: document.getElementById('tplFeedCode'),
+    tplFeedDev: document.getElementById('tplFeedDev'),
 
     // Redes e Textos
     btnTwitterShare: document.getElementById('btnTwitterShare'),
@@ -492,6 +577,13 @@ function handleVote() {
         // Incrementa o contador de votos (Muita mão criar API para vocês não burlarem kkkkkk)
         let count = parseInt(safeStorage.getItem('saninplay_vote_count')) || 0;
         count++;
+
+        // Garante que o timestamp do primeiro voto está definido e assinado
+        let firstVote = safeStorage.getItem('saninplay_first_vote');
+        if (!firstVote) {
+            safeStorage.setItem('saninplay_first_vote', now.toString());
+        }
+
         safeStorage.setItem('saninplay_vote_count', count.toString());
 
         safeStorage.setItem('saninplay_last_vote', now.toString());
@@ -767,7 +859,18 @@ function updateStats() {
     // ==========================================
     // Atualiza também os Templates Off-Screen
     // ==========================================
+    const isDevMode = safeStorage.getItem('saninplay_dev_mode') === 'true';
     const verification = generateVerificationCode(votes);
+
+    // Ativa/Desativa marca d'água de desenvolvimento nos templates
+    if (el.tplStoriesDev) {
+        if (isDevMode) el.tplStoriesDev.classList.add('active');
+        else el.tplStoriesDev.classList.remove('active');
+    }
+    if (el.tplFeedDev) {
+        if (isDevMode) el.tplFeedDev.classList.add('active');
+        else el.tplFeedDev.classList.remove('active');
+    }
 
     // Template Stories
     if (el.tplStoriesRank) {
@@ -901,7 +1004,9 @@ function generateVerificationCode(votes) {
     const salt = 7197;
     let val = (votes * 17 + salt) % 10000;
     let valHex = val.toString(16).toUpperCase().padStart(4, '0');
-    return `SIP-${votes.toString().padStart(4, '0')}-${valHex}`;
+    const isDev = safeStorage.getItem('saninplay_dev_mode') === 'true';
+    const prefix = isDev ? 'DEV' : 'SIP';
+    return `${prefix}-${votes.toString().padStart(4, '0')}-${valHex}`;
 }
 
 // Retorna o texto formatado para ser compartilhado
@@ -960,14 +1065,29 @@ function copyShareText() {
     }
 }
 
-// Ajusta a contagem de votos via DevTools
+// Ajusta a contagem de votos via DevTools (ajustando a matemática temporal para testes legítimos)
 function adjustVotes(amount, setExact = false) {
     let votes = parseInt(safeStorage.getItem('saninplay_vote_count')) || 0;
+    const now = Date.now();
+    let firstVote = parseInt(safeStorage.getItem('saninplay_first_vote')) || now;
+
     if (setExact) {
         votes = amount;
+        if (votes === 0) {
+            safeStorage.removeItem('saninplay_first_vote');
+            safeStorage.removeItem('saninplay_dev_mode');
+        } else {
+            firstVote = now - (votes - 1) * VOTE_COOLDOWN_MS;
+            safeStorage.setItem('saninplay_first_vote', firstVote.toString());
+            safeStorage.setItem('saninplay_dev_mode', 'true');
+        }
     } else {
         votes += amount;
+        firstVote = firstVote - (amount * VOTE_COOLDOWN_MS);
+        safeStorage.setItem('saninplay_first_vote', firstVote.toString());
+        safeStorage.setItem('saninplay_dev_mode', 'true');
     }
+
     safeStorage.setItem('saninplay_vote_count', votes.toString());
     updateStats();
     updateDevToolsInfo();
@@ -976,3 +1096,4 @@ function adjustVotes(amount, setExact = false) {
 
 // Start
 init();
+})();
