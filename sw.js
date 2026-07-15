@@ -1,8 +1,11 @@
-const CACHE_NAME = 'saninplay-v8';
+importScripts('./config.js');
+
+const CACHE_NAME = 'saninplay-v17';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
+  './config.js',
   './app.js',
   './manifest.json',
   './ico192.png',
@@ -53,7 +56,7 @@ self.addEventListener('message', event => {
 
     const triggerTime = Date.now() + delay;
     const notificationOptions = {
-      body: "Tá na hora de votar de novo no iBest! Ajude o San!",
+      body: `Tá na hora de votar de novo! Ajude o ${CONFIG.CREATOR_NICKNAME} no ${CONFIG.CAMPAIGN_TITLE}!`,
       icon: "ico192.png",
       badge: "badge.svg",
       vibrate: [200, 100, 200],
@@ -66,7 +69,7 @@ self.addEventListener('message', event => {
     if (typeof TimestampTrigger !== 'undefined') {
       try {
         notificationOptions.showTrigger = new TimestampTrigger(triggerTime);
-        self.registration.showNotification("SanInPlay 🔥", notificationOptions);
+        self.registration.showNotification(`${CONFIG.BRAND_NAME} 🔥`, notificationOptions);
         console.log("Service Worker: Notificação agendada usando TimestampTrigger para:", triggerTime);
         return;
       } catch (e) {
@@ -76,7 +79,7 @@ self.addEventListener('message', event => {
 
     // Fallback: Temporizador padrão (o navegador pode suspender o SW e interromper o timer)
     notificationTimeout = setTimeout(() => {
-      self.registration.showNotification("SanInPlay 🔥", notificationOptions);
+      self.registration.showNotification(`${CONFIG.BRAND_NAME} 🔥`, notificationOptions);
     }, delay);
   }
 });
